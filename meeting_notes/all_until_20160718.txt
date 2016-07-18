@@ -1,0 +1,110 @@
+# First project meeting for LoRA + mesh network
+Attendees: Andreas + Udit, Thursday
+Date: May 19, 2016
+Location: STEAMLabs
+
+NB: Feel free to edit
+
+## Agenda
+Project goals
+Document design and code for knowledge transfer
+Hardware
+Nodes
+LoRA <—> IP bridge (Raspberry Pi + LoRA transceiver)
+Raspberry Pi Mesh network (re-use tomesh.net)
+Firmware
+For nodes
+For IP bridge
+Software
+Data repository
+MQTT server
+Round robin database for time series data
+HTTP Rest interface, for interfacing
+Application
+Citizen science: weather monitoring? air quality sensors?
+Art installations
+Project Strategy
+Hardware + Software Development
+Community engagement
+Blogposts
+Teaching
+Build community apps
+Internal stuff
+Version control: Git
+Communication: Slack + email
+Next steps:
+Get LoRA node <—> Cloud connection working, once we have the chips
+Classify use-cases to understand how the data should be stored and accessed
+Firm up on network architecture, protocols, payload of LoRA
+Udit to set up Git repository on Github (Week of June 1st)
+
+## Discussion about initial project annoucement
+
+The last few year have been an exciting time for the DIY electronics community. There has been an explosion of sensors, actuators, and micro-controllers to tinker with. Additionally, with access to inexpensive hardware like the Photon, Raspberry Pi, and ESP8266 it’s easier than ever to embed web-services directly in to our projects. However, most of these projects connect to the web over WiFi. This limits our projects to indoors or tethered to our smartphones. The lack of mobility makes it difficult to explore some exciting ideas like distributed citizen science, web enabled guerrilla art, and remote project monitoring. A new, inexpensive, and low-power technology called LoRA could be a great solution to this problem. Our work aims to set up tools and infrastructure for the maker community to use LoRA to give web access to their projects up to a distance of 5 KM (if everything works according to plan). We also aim to create a repository of open-data so different projects can talk to each other directly over the web, leading to even more awesomeness! We hope to make all our designs, code, and learnings open to the public so that everyone can learn and build along with us. 
+
+- The words "web" and "web-enabled" may give the wrong impression of bandwidth/data rates. Should we emphasize this is more for M2M and very ocassional data transfer
+
+#Backend ("store") software
+
+##ThinkSpeak (https://www.mathworks.com/help/thingspeak/examples.html )
+ Very good support for multiple platforms, including Arduino, Particle and ESP8266. Support for Mathworks to directly use ThinkSpeed data sources in math calculations and graphing.
+
+Task for the project could initially be  reducted to writing an MQTT <--> ThinkSpeak Bridge.  Needs further analysis of ThinkSpeeks' API and matchup with our requirements. 
+
+Monday, 13th June
+
+Links:
+Example Gateway using RPi + LoRAhttp://cpham.perso.univ-pau.fr/LORA/RPIgateway.html
+Distributed Hash Table: https://en.wikipedia.org/wiki/Kademlia
+LoRAWAN Spec: https://www.lora-alliance.org/portals/0/specs/LoRaWAN%20Specification%201R0.pdf
+
+- Only distinction we need to make is A. Nodes with only LoRA interface, B. Nodes with LoRA + IP interface
+- 1-to-1 topology is an extreme limit of a mesh topology, which we will begin with
+
+Meeting of 28th June, 12pm-1pm
+
+- Check out http://telehash.org/ for a tiny meshing protocol
+- Talked about the need for a requirements/layering document
+- Work to be done:
+    1. Software library for microcontrollers
+    2. Hardware steamlink "connector" with LoRA and/or WiFi
+    3. LoRA to WiFi bridging library (LoRA <--> TCP/IP <--> Store)
+    4. Database "store" (node.js? + mongodb)
+    5. Front end HTTP/web interface for the "store"
+- Introduced Kat to the project. She's got great experience with front-end web stuff
+- Andreas is also ordering the Adafruit LoRA boards
+
+12th July
+
+- Eve, for Python
+- Cube, for timeseries querying layer written in Javascript 
+- Van Jacobson PPP, protocol that removes static data over the stream
+- Read up on JSON web tokens for understanding how authenticated web sessions work: https://en.wikipedia.org/wiki/JSON_Web_Token
+- MQTT as a JSON transport for CRUD
+
+Simplest data:
+example case: sending a single value, such as temperature data across the LoRA link. 
+Client should not need to configure data fields at all.
+
+Server inserts json record with
+_ts, timestamp
+_id, object identity
+_v, value
+
+Do we need to make a record type where _ts is optional? For example storing a state var?
+- Purely for storage optimization
+
+Complex data:
+example case: Moving car wants to send multiple fields such as GPS, gas consumption, speed, direction, occupancy, a/c etc.
+_ts
+_id
+lat: value
+long: value
+...
+fieldname: value
+
+Nice to have: client access to MQTT broker such that they can duplicate MQTT stream. They rely on our LoRA link but not our storage infrastructure
+
+A/C Management: User creates tokens for each collection. Arduino client has no notion of user, but only collection token for id.
+Arduino API : unique {token}
+A/C level: user has many {token, collection, device_id (optional)}
